@@ -3,7 +3,7 @@ services:
     name: dealfinder
     runtime: docker
     plan: free
-    healthCheckPath: /api/cron
+    healthCheckPath: /
     envVars:
       - key: DATABASE_URL
         fromDatabase:
