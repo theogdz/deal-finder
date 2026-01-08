@@ -1,0 +1,104 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String?
+  searches      Search[]
+  conversations Conversation[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  userId    String?
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  Message[]
+  
+  itemType    String?
+  zipcode     String?
+  radius      Int?
+  maxPrice    Int?
+  minPrice    Int?
+  preferences String?
+  email       String?
+  
+  isComplete  Boolean  @default(false)
+  searchId    String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String
+  content        String
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+}
+
+model Search {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query       String
+  zipcode     String
+  radius      Int       @default(25)
+  maxPrice    Int?
+  minPrice    Int?
+  preferences String?
+  
+  isActive    Boolean   @default(true)
+  listings    Listing[]
+  lastChecked DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([isActive])
+}
+
+model Listing {
+  id          String   @id @default(cuid())
+  searchId    String
+  search      Search   @relation(fields: [searchId], references: [id], onDelete: Cascade)
+  externalId  String
+  title       String
+  price       Int?
+  url         String
+  description String?
+  imageUrl    String?
+  location    String?
+  postedAt    DateTime?
+  
+  dealScore   Int?
+  dealReason  String?
+  isGoodDeal  Boolean  @default(false)
+  alertSent   Boolean  @default(false)
+  
+  identifiedProduct String?
+  retailPriceLow    Int?
+  retailPriceHigh   Int?
+  condition         String?
+  
+  createdAt   DateTime @default(now())
+
+  @@unique([searchId, externalId])
+  @@index([searchId])
+  @@index([isGoodDeal])
+  @@index([alertSent])
+}

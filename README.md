@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DealFinder
 
-## Getting Started
+AI-powered Craigslist deal alerts. Tell it what you want, get notified when great deals appear.
 
-First, run the development server:
+## Features
+
+- 💬 **Conversational setup** — Just chat to create alerts
+- 🤖 **AI evaluation** — Gemini 3 searches prices, scores deals 1-100
+- 📷 **Image analysis** — AI sees listing photos
+- 📧 **Email alerts** — Get notified instantly
+- 🔒 **Rate limiting** — Protected against abuse
+
+## Quick Start (Local)
 
 ```bash
+# Install dependencies
+npm install
+npx playwright install chromium
+
+# Set up database
+cp .env.example .env
+# Edit .env with your GEMINI_API_KEY
+npx prisma db push
+
+# Run
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploy to Render (Free)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 
-## Learn More
+1. Click the button above (or go to render.com/deploy)
+2. Connect your GitHub repo
+3. Render will auto-detect `render.yaml`
+4. Set `GEMINI_API_KEY` in environment variables
+5. Deploy!
 
-To learn more about Next.js, take a look at the following resources:
+The free tier includes:
+- Web service (750 hours/month)
+- PostgreSQL database (256MB)
+- Automatic HTTPS
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Environment Variables
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GEMINI_API_KEY` | Yes | Get from [AI Studio](https://aistudio.google.com/apikey) |
+| `DATABASE_URL` | Yes | Postgres connection string (auto-set by Render) |
+| `CRON_SECRET` | Prod | Protects `/api/cron` endpoint |
+| `RESEND_API_KEY` | Optional | For email alerts ([resend.com](https://resend.com)) |
 
-## Deploy on Vercel
+## Hourly Scans
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Use [cron-job.org](https://cron-job.org) (free) to call:
+```
+GET https://your-app.onrender.com/api/cron
+Authorization: Bearer YOUR_CRON_SECRET
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Schedule: `0 * * * *` (every hour)
+
+## Tech Stack
+
+- Next.js 14
+- Prisma + PostgreSQL
+- Playwright (Craigslist scraping)
+- Gemini 3 Flash (AI evaluation)
+- Resend (email)
