@@ -100,7 +100,7 @@ export async function sendDealAlertEmail(params: AlertEmailParams): Promise<bool
 
   try {
     const { error } = await resend.emails.send({
-      from: 'DealFinder <deals@yourdomain.com>', // Update with your verified domain
+      from: process.env.EMAIL_FROM || 'onboarding@resend.dev', // Use allowed domain
       to: params.recipientEmail,
       subject: `🎯 ${params.deals.length} new deal${params.deals.length > 1 ? 's' : ''} for "${params.searchQuery}"`,
       html: generateEmailHTML(params),
