@@ -6,7 +6,7 @@
 import { fetchCraigslistListings, closeBrowser, getRegionFromZipcode, buildSearchUrl } from '../src/lib/craigslist';
 import { evaluateListing, DealEvaluation } from '../src/lib/ai-evaluator';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyCURmu0WCgxy9SVAIilk1Zp1kc1sLOMCx0';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 async function testCraigslistFetch() {
     console.log('='.repeat(60));
@@ -87,6 +87,7 @@ async function testAIEvaluation(listings: Awaited<ReturnType<typeof fetchCraigsl
 
     console.log('Evaluating with Gemini 2.0 Flash (with web search)...\n');
 
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY not set");
     const evaluation: DealEvaluation = await evaluateListing(listingToEvaluate, GEMINI_API_KEY);
 
     console.log('🎯 AI Evaluation Result:');
