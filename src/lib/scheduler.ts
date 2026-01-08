@@ -64,9 +64,7 @@ export async function processSearch(searchId: string): Promise<{
                 description: listing.description,
                 imageUrls: listing.imageUrls || [],
                 query: search.query,
-                bikeType: search.bikeType || undefined,
-                userFrameSize: search.frameSize || undefined,
-                conditionPreference: search.condition || undefined,
+                preferences: search.preferences || undefined,
             },
             apiKey
         );
@@ -97,8 +95,6 @@ export async function processSearch(searchId: string): Promise<{
                 retailPriceLow: evaluation.retailPriceRange?.low || null,
                 retailPriceHigh: evaluation.retailPriceRange?.high || null,
                 condition: evaluation.condition,
-                frameSize: evaluation.frameSize,
-                sizeFit: evaluation.sizeFit,
             },
         });
 

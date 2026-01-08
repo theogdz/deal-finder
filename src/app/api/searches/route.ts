@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
+import { checkRateLimit, isSuspiciousRequest, getClientIP, RATE_LIMITS } from '@/lib/security';
 
 // GET /api/searches - List all searches
 export async function GET(request: NextRequest) {
@@ -43,8 +44,23 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST /api/searches - Create a new search
+// POST /api/searches - Create a new search (Legacy/Manual Endpoint)
 export async function POST(request: NextRequest) {
+    // Basic security checks
+    const clientIP = getClientIP(request);
+    if (isSuspiciousRequest(request)) {
+        return NextResponse.json({ error: 'Request blocked' }, { status: 403 });
+    }
+
+    // Rate limit
+    const rateLimit = checkRateLimit(`create_search:${clientIP}`, RATE_LIMITS.createAlert);
+    if (!rateLimit.allowed) {
+        return NextResponse.json(
+            { error: `Too many requests. Try again in ${rateLimit.resetIn} seconds.` },
+            { status: 429 }
+        );
+    }
+
     try {
         const body = await request.json();
         const {
@@ -52,11 +68,8 @@ export async function POST(request: NextRequest) {
             query,
             zipcode,
             maxPrice,
-            minPrice,
-            bikeType,
-            frameSize,
-            condition,
-            height,
+            radius,
+            preferences, // Generic preferences object or JSON string
         } = body;
 
         if (!email || !query || !zipcode) {
@@ -67,7 +80,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Validate zipcode format
-        if (!/^\d{5}$/.test(zipcode)) {
+        if (!/^\d{5}(-\d{4})?$/.test(zipcode)) {
             return NextResponse.json(
                 { error: 'Invalid zipcode format' },
                 { status: 400 }
@@ -81,30 +94,40 @@ export async function POST(request: NextRequest) {
 
         if (!user) {
             user = await prisma.user.create({
-                data: {
-                    email,
-                    height: height ? parseInt(height, 10) : null,
-                },
-            });
-        } else if (height && user.height !== parseInt(height, 10)) {
-            // Update height if provided and different
-            user = await prisma.user.update({
-                where: { email },
-                data: { height: parseInt(height, 10) },
+                data: { email },
             });
         }
 
-        // Create the search with personalization
+        // Check search limit
+        const activeSearches = await prisma.search.count({
+            where: { userId: user.id, isActive: true }
+        });
+
+        if (activeSearches >= 10) {
+            return NextResponse.json(
+                { error: 'Maximum of 10 active searches allowed' },
+                { status: 400 }
+            );
+        }
+
+        // Parse preferences if it's a string, or stringify if it's an object
+        // The DB stores it as a string
+        let preferencesString = null;
+        if (typeof preferences === 'string') {
+            preferencesString = preferences;
+        } else if (preferences) {
+            preferencesString = JSON.stringify(preferences);
+        }
+
+        // Create the search
         const search = await prisma.search.create({
             data: {
                 userId: user.id,
                 query: query.trim(),
                 zipcode,
+                radius: radius ? parseInt(radius, 10) : 25,
                 maxPrice: maxPrice ? parseInt(maxPrice, 10) : null,
-                minPrice: minPrice ? parseInt(minPrice, 10) : null,
-                bikeType: bikeType || null,
-                frameSize: frameSize || null,
-                condition: condition || null,
+                preferences: preferencesString,
             },
         });
 
