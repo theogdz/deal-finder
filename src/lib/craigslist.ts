@@ -195,7 +195,7 @@ export async function fetchListingDetails(
         // Get all image URLs
         const imageUrls = await page.$$eval(
             '.gallery img, .swipe img, .thumb img, img[src*="images.craigslist.org"]',
-            (imgs) => imgs.map((img) => img.src || img.getAttribute('data-src') || '').filter(Boolean)
+            (imgs) => imgs.map((img) => (img as HTMLImageElement).src || img.getAttribute('data-src') || '').filter(Boolean)
         ).catch(() => []);
 
         return { description, imageUrls };
